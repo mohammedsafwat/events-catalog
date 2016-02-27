@@ -122,7 +122,7 @@ def gconnect():
     output += '<img src="'
     output += login_session['picture']
     output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
-    flash("you are now logged in as %s" % login_session['username'])
+    flash("You are now logged in as %s" % login_session['username'])
     print "done!"
     return output
 
@@ -130,6 +130,8 @@ def gconnect():
 @app.route('/disconnect')
 def disconnect():
     if 'provider' in login_session:
+        print "<<<"
+        print login_session
         if login_session['provider'] == 'google':
             gdisconnect()
             del login_session['gplus_id']
@@ -305,6 +307,7 @@ def organizersJSON():
 @app.route('/')
 @app.route('/organizer/')
 def showOrganizers():
+    print 'showOrganizers'
     organizers = session.query(Organizer).order_by(asc(Organizer.name))
     if 'username' not in login_session:
         return render_template('publicOrganizers.html', organizers = organizers)
@@ -318,6 +321,10 @@ def newOrganizer():
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
+        if None or '' in request.form.values():
+            flash('Please make sure that you have entered all necessary data for all form fields')
+            return render_template('newOrganizer.html')
+    
         organizer_thumbnail_url = request.form['organizer_thumbnail_url']
         if not organizer_thumbnail_url:
             organizer_thumbnail_url = "http://818397471.r.worldcdn.net/wp-content/uploads/2015/01/Dj-Logo-Design-For-Sale.png"
@@ -334,8 +341,9 @@ def newOrganizer():
 def editOrganizer(organizer_id):
   editedOrganizer = session.query(Organizer).filter_by(id = organizer_id).one()
   if request.method == 'POST':
-      if request.form['name']:
+      if request.form['name'] and request.form['organizer_thumbnail_url']:
         editedOrganizer.name = request.form['name']
+        editedOrganizer.organizer_thumbnail_url = request.form['organizer_thumbnail_url']
         flash('Organizer Successfully Edited %s' % editedOrganizer.name)
         return redirect(url_for('showOrganizers'))
   else:
@@ -383,10 +391,12 @@ def showEvent(organizer_id):
 def newEvent(organizer_id):
   organizer = session.query(Organizer).filter_by(id = organizer_id).one()
   if request.method == 'POST':
-      if not 'featured' in request.form:
-        featured = 0
+      featured = 0
+      if 'featured' in request.form:
+        featured = request.form['featured']
+        
       if None or '' in request.form.values():
-        flash('Please make sure that you have entered all necessary data for all form fields.')
+        flash('Please make sure that you have entered all necessary data for all form fields')
         return render_template('newEvent.html')
 
       newEvent = Event(
@@ -410,9 +420,12 @@ def newEvent(organizer_id):
 # Edit an event
 @app.route('/organizer/<int:organizer_id>/event/<int:event_id>/edit', methods=['GET','POST'])
 def editEvent(organizer_id, event_id):
-
     editedEvent = session.query(Event).filter_by(id = event_id).one()
     organizer = session.query(Organizer).filter_by(id = organizer_id).one()
+    featured = 0
+    if 'featured' in request.form:
+        featured = request.form['featured']
+        
     if request.method == 'POST':
         if request.form['name']:
             editedEvent.name = request.form['name']
@@ -426,8 +439,7 @@ def editEvent(organizer_id, event_id):
             editedEvent.ticket_price = request.form['ticket_price']
         if request.form['start_date']:
             editedEvent.start_date = datetime.strptime(request.form['start_date'], '%Y-%M-%d')
-        if request.form['featured']:
-            editedEvent.featured = request.form['featured']
+        editedEvent.featured = featured
 
         session.add(editedEvent)
         session.commit()

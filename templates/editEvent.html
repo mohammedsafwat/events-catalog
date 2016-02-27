@@ -1,9 +1,6 @@
 {% extends "main.html" %}
 {% block content %}
-{% include "header.html" %}
-	<div class="row divider green">
-		<div class="col-md-12"></div>
-	</div>
+    {% include "header.html" %}
 	<div class="row banner menu">
 		<div class="col-md-11 col-md-offset-1 padding-none">
 			<h1>Edit Event</h1>
@@ -11,49 +8,57 @@
 	</div>
 	<div class="row">
 		<div class="col-md-6 col-md-offset-1 padding-top">
-			<form action="#" method = "post">
+			<form action="#" method="post">
 				<div class="form-group">
 					<label for="name">Name:</label>
-					<input type ="text" maxlength="100" class="form-control" name="name"
+					<input type ="text" class="form-control" name="name"
 							value="{{event.name }}">
-
+                </div>
+                <div class="form-group">
 					<label for="description">Description:</label>
-					<textarea class="form-control" maxlength="250" rows="3"
-							name="description">{{event.description}}</textarea>
-
+                    <input type="text" class="form-control" name="description" value="{{event.description}}">
+                </div>
+                <div class="form-group">
 					<label for="course">Event URL:</label>
-					<input type="text" maxlength="50" class="form-control" name="event_url"
-							value="{{event.event_url}}">
-
+					<input type="text" class="form-control" name="event_url" value="{{event.event_url}}">
+                </div>
+                <div class="form-group">
 					<label for="event_url">Event Thumbnail URL:</label>
-					<input type="text" maxlength="50" class="form-control" name="event_thumbnail_url"
+					<input type="text" class="form-control" name="event_thumbnail_url"
 							value="{{event.event_thumbnail_url}}">
-
+                </div>
+                <div class="form-group">
 					<label for="price">Ticket Price:</label>
 					<div class="input-group">
 						<div class="input-group-addon">$</div>
-						<input type ="text" maxlength="10" class="form-control" name="ticket_price"
+						<input type="text" maxlength="10" class="form-control" name="ticket_price"
 						 	value="{{event.ticket_price}}">
 					</div>
-
+                </div>
+                <div class="form-group">
 					<label for="start_date">Start Date:</label>
 					<input type="date" class="form-control" name="start_date" value="{{event.start_date}}" />
-
-					<label for="featured"><input type="checkbox" id="cbox1" name="featured"
-						checked={{event.featured}} value=1> Featured</label>
-					<br/>
-					<button type="submit" class="btn btn-default" id="submit" type="submit">
+                </div>
+                <div class="checkbox">
+                    <label>
+                        {% if event.featured %}
+                            <input type="checkbox" id="checkbox" name="featured" checked="" value=1> Featured
+                        {% else %}
+                            <input type="checkbox" id="checkbox" name="featured"  value=1> Featured
+                        {% endif %}
+                    </label>
+                </div>	
+				<button type="submit" class="btn btn-default" id="submit" type="submit">
 						<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
 						Save
-					</button>
-					<a href = '{{url_for('showOrganizers')}}'>
-					<button class="btn btn-default delete">
+				</button>
+				<a href = "{{url_for('showOrganizers')}}">
+					<button type="button" class="btn btn-default">
 						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
 						Cancel
 					</button>
-					</a>
-				</div>
-			</form>
-		</div>
-	</div>
+				</a>
+            </form>
+        </div>
+    </div>
 {% endblock %}
