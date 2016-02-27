@@ -1,0 +1,37 @@
+{% extends "main.html" %}
+{% block content %}
+    <div class = 'flash'>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul>
+                    {% for message in messages %}
+                        <li> <strong> {{ message }} </strong> </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <div class="navbar-left">
+        <a href="{{url_for('newOrganizer')}}">
+            <button class="btn btn-default" id="new-organizer-button">
+                <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                Add Organizer
+            </button>
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="row centered mt mb">
+            <h1>ORGANIZERS</h1>
+            {% for organizer in organizers %}
+                <div class="col-lg-4 col-md-4 col-sm-4 gallery">
+                    <a href="{{url_for('showEvent', organizer_id = organizer.id)}}">
+                        <img src={{organizer.organizer_thumbnail_url}} class="img-responsive organizer-thumbnail">
+                        <h4>{{organizer.name}}</h4>
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

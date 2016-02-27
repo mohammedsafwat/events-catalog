@@ -1,0 +1,59 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+	<div class="row divider green">
+		<div class="col-md-12"></div>
+	</div>
+	<div class="row banner menu">
+		<div class="col-md-11 col-md-offset-1 padding-none">
+			<h1>Edit Event</h1>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-6 col-md-offset-1 padding-top">
+			<form action="#" method = "post">
+				<div class="form-group">
+					<label for="name">Name:</label>
+					<input type ="text" maxlength="100" class="form-control" name="name"
+							value="{{event.name }}">
+
+					<label for="description">Description:</label>
+					<textarea class="form-control" maxlength="250" rows="3"
+							name="description">{{event.description}}</textarea>
+
+					<label for="course">Event URL:</label>
+					<input type="text" maxlength="50" class="form-control" name="event_url"
+							value="{{event.event_url}}">
+
+					<label for="event_url">Event Thumbnail URL:</label>
+					<input type="text" maxlength="50" class="form-control" name="event_thumbnail_url"
+							value="{{event.event_thumbnail_url}}">
+
+					<label for="price">Ticket Price:</label>
+					<div class="input-group">
+						<div class="input-group-addon">$</div>
+						<input type ="text" maxlength="10" class="form-control" name="ticket_price"
+						 	value="{{event.ticket_price}}">
+					</div>
+
+					<label for="start_date">Start Date:</label>
+					<input type="date" class="form-control" name="start_date" value="{{event.start_date}}" />
+
+					<label for="featured"><input type="checkbox" id="cbox1" name="featured"
+						checked={{event.featured}} value=1> Featured</label>
+					<br/>
+					<button type="submit" class="btn btn-default" id="submit" type="submit">
+						<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+						Save
+					</button>
+					<a href = '{{url_for('showOrganizers')}}'>
+					<button class="btn btn-default delete">
+						<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+						Cancel
+					</button>
+					</a>
+				</div>
+			</form>
+		</div>
+	</div>
+{% endblock %}
