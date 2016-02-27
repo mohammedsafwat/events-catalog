@@ -26,8 +26,7 @@ User1 = User(name="Mohammed Safwat", email="mail.msafwat@gmail.com",
 session.add(User1)
 session.commit()
 
-organizer1 = Organizer(user_id=1, name="Virgin Megastore", homepage_url="http://virginmegastore.me",
-                       organizer_thumbnail_url="http://the3doodler.com/wp-content/uploads/2015/02/virgin_megastore.jpg")
+organizer1 = Organizer(user_id=1, name="Virgin Megastore", organizer_thumbnail_url="http://the3doodler.com/wp-content/uploads/2015/02/virgin_megastore.jpg")
 
 session.add(organizer1)
 session.commit()

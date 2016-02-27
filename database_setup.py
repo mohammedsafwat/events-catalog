@@ -18,7 +18,6 @@ class Organizer(Base):
 
     id = Column(Integer, primary_key = True)
     name = Column(String(250), nullable = False)
-    homepage_url = Column(String(250))
     organizer_thumbnail_url = Column(String(250))
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
@@ -29,7 +28,7 @@ class Organizer(Base):
        return {
            'name'          : self.name,
            'id'            : self.id,
-           'homepage_url'  : self.homepage_url
+           'thumbnail_url'  : self.organizer_thumbnail_url
        }
 
 class Event(Base):
@@ -58,7 +57,7 @@ class Event(Base):
            'event_thumbnail_url' : self.event_thumbnail_url,
            'description'    : self.description,
            'ticket_price'   : self.ticket_price,
-           'start_date'     : self.start_date,
+           'start_date'     : str(self.start_date),
            'featued'        : self.featured
        }
 

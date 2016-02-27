@@ -130,8 +130,6 @@ def gconnect():
 @app.route('/disconnect')
 def disconnect():
     if 'provider' in login_session:
-        print "<<<"
-        print login_session
         if login_session['provider'] == 'google':
             gdisconnect()
             del login_session['gplus_id']
@@ -294,7 +292,7 @@ def organizerEventsJSON(organizer_id):
 @app.route('/organizer/<int:organizer_id>/event/<int:event_id>/JSON')
 def eventJSON(organizer_id, event_id):
     event = session.query(Event).filter_by(id = event_id).one()
-    return jsonify(event = Event.serialize)
+    return jsonify(Event = event.serialize)
 
 
 @app.route('/organizer/JSON')
