@@ -21,15 +21,16 @@ class Organizer(Base):
     organizer_thumbnail_url = Column(String(250))
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship(User)
-
+    events = relationship("Event", cascade='all, delete-orphan')
+    
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-           'name'          : self.name,
-           'id'            : self.id,
-           'thumbnail_url'  : self.organizer_thumbnail_url
-       }
+        """Return object data in easily serializeable format"""
+        return {
+            'name'           : self.name,
+            'id'             : self.id,
+            'thumbnail_url'  : self.organizer_thumbnail_url
+        }
 
 class Event(Base):
     __tablename__ = 'event'
@@ -49,16 +50,16 @@ class Event(Base):
 
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-           'id'             : self.id,
-           'name'           : self.name,
-           'event_url'      : self.event_url,
-           'event_thumbnail_url' : self.event_thumbnail_url,
-           'description'    : self.description,
-           'ticket_price'   : self.ticket_price,
-           'start_date'     : str(self.start_date),
-           'featued'        : self.featured
+        """Return object data in easily serializeable format"""
+        return {
+            'id'                    : self.id,
+            'name'                  : self.name,
+            'event_url'             : self.event_url,
+            'event_thumbnail_url'   : self.event_thumbnail_url,
+            'description'           : self.description,
+            'ticket_price'          : self.ticket_price,
+            'start_date'            : str(self.start_date),
+            'featued'               : self.featured
        }
 
 engine = create_engine('sqlite:///events.db')
