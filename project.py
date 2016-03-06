@@ -1,6 +1,4 @@
 from flask import Flask, render_template, request, redirect,jsonify, url_for, flash
-app = Flask(__name__)
-
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import User, Organizer, Event, Base
@@ -15,6 +13,10 @@ import requests
 from datetime import datetime
 from functools import wraps
 from dict2xml import dict2xml as xmlify
+from flask.ext.seasurf import SeaSurf
+
+app = Flask(__name__)
+csrf = SeaSurf(app)
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
