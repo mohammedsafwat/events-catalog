@@ -255,3 +255,8 @@ h1, h2, h3, h4, h5, h6 {
 	list-style-type: none;
 	text-align: center;
 }
+
+.login-button {
+    margin: 0px auto;
+    width = 390px;
+}
