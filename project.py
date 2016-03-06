@@ -45,6 +45,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return checkForLogin
 
+@csrf.exempt
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
@@ -181,6 +182,7 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
+@csrf.exempt
 @app.route('/fbconnect', methods=['POST'])
 def fbconnect():
     if request.args.get('state') != login_session['state']:
