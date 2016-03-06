@@ -14,6 +14,7 @@ from flask import make_response
 import requests
 from datetime import datetime
 from functools import wraps
+from dict2xml import dict2xml as xmlify
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
@@ -276,24 +277,38 @@ def getUserID(email):
         return None
 
 # JSON APIs to view Organizer Information
-@app.route('/organizer/<int:organizer_id>/event/JSON')
-def organizerEventsJSON(organizer_id):
+@app.route('/organizer/<int:organizer_id>/event/<api_type>')
+def organizerEventsAPI(organizer_id, api_type):
     organizer = session.query(Organizer).filter_by(id = organizer_id).one()
     events = session.query(Event).filter_by(organizer_id = organizer_id).all()
-    return jsonify(Events=[e.serialize for e in events])
+    if api_type == 'XML':
+        return xmlify(data = [e.serialize for e in events], wrap="all", indent="  ")
+    elif api_type == 'JSON':
+        return jsonify(Events = [e.serialize for e in events])
+    else:
+        return jsonify({'error' : 'Please choose a valid api type, either XML or JSON.'})
 
 
-@app.route('/organizer/<int:organizer_id>/event/<int:event_id>/JSON')
-def eventJSON(organizer_id, event_id):
+@app.route('/organizer/<int:organizer_id>/event/<int:event_id>/<api_type>')
+def eventJSON(organizer_id, event_id, api_type):
     event = session.query(Event).filter_by(id = event_id).one()
-    return jsonify(Event = event.serialize)
+    if api_type == 'XML':
+        return xmlify(data = event.serialize, wrap="all", indent="  ")
+    elif api_type == 'JSON':
+        return jsonify(Event = event.serialize)
+    else:
+        return jsonify({'error' : 'Please choose a valid api type, either XML or JSON.'})
 
 
-@app.route('/organizer/JSON')
-def organizersJSON():
+@app.route('/organizer/<api_type>')
+def organizersAPI(api_type):
     organizers = session.query(Organizer).all()
-    return jsonify(organizers= [o.serialize for o in organizers])
-
+    if api_type == 'XML':
+        return xmlify(data = [o.serialize for o in organizers], wrap="all", indent="  ")
+    elif api_type == 'JSON':
+        return jsonify(organizers = [o.serialize for o in organizers])
+    else:
+        return jsonify({'error' : 'Please choose a valid api type, either XML or JSON.'})
 
 # Show all organizers
 @app.route('/')
@@ -352,11 +367,6 @@ def deleteOrganizer(organizer_id):
     
     if request.method == 'POST':
         session.delete(organizerToDelete)
-#        organizerEvents = session.query(Event).filter_by(organizer_id = organizer_id).all()
-#        for organizerEvent in organizerEvents:
-#            eventToDelete = session.query(Event).filter_by(id = organizerEvent.id).one()
-#            session.delete(eventToDelete)
-
         flash('%s Successfully Deleted' % organizerToDelete.name)
         session.commit()
         return redirect(url_for('showOrganizers', organizer_id = organizer_id))
