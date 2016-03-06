@@ -4,18 +4,16 @@ app = Flask(__name__)
 from sqlalchemy import create_engine, asc
 from sqlalchemy.orm import sessionmaker
 from database_setup import User, Organizer, Event, Base
-
 from flask import session as login_session
 import random, string
-
 from oauth2client.client import flow_from_clientsecrets
 from oauth2client.client import FlowExchangeError
 import httplib2
 import json
 from flask import make_response
 import requests
-
 from datetime import datetime
+from functools import wraps
 
 CLIENT_ID = json.loads(open('client_secrets.json', 'r').read())['web']['client_id']
 
@@ -35,6 +33,14 @@ def showLogin():
     # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
 
+# Login required decorator
+def login_required(f):
+    @wraps(f)
+    def checkForLogin(*args, **kwargs):
+        if 'username' not in login_session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return checkForLogin
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
@@ -94,7 +100,7 @@ def gconnect():
 
     # Store the access token in the session for later use.
     login_session['provider'] = 'google'
-    login_session['credentials'] = credentials
+    login_session['credentials'] = credentials.to_json()
     login_session['gplus_id'] = gplus_id
     response = make_response(json.dumps('Successfully connected user', 200))
 
@@ -108,7 +114,8 @@ def gconnect():
     login_session['username'] = data['name']
     login_session['picture'] = data['picture']
     login_session['email'] = data['email']
-
+    login_session['access_token'] = credentials.access_token
+    
     # See if user exists, if it does not make a new one.
     user_id = getUserID(login_session['email'])
     if not user_id:
@@ -132,17 +139,8 @@ def disconnect():
     if 'provider' in login_session:
         if login_session['provider'] == 'google':
             gdisconnect()
-            del login_session['gplus_id']
-            del login_session['credentials']
         if login_session['provider'] == 'facebook':
             fbdisconnect()
-            del login_session['facebook_id']
-
-        del login_session['username']
-        del login_session['email']
-        del login_session['picture']
-        del login_session['user_id']
-        del login_session['provider']
         flash("You have Successfully been logged out.")
         return redirect(url_for('showOrganizers'))
     else:
@@ -153,18 +151,16 @@ def disconnect():
 @app.route('/gdisconnect')
 def gdisconnect():
     # Only disconnect a connected user
-    credentials = login_session.get('credentials')
+    credentials = json.loads(login_session.get('credentials'))
     if credentials is None:
         response = make_response(json.dumps('Current user not connected.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
     # Execute HTTP Get to revoke current token
-    access_token = credentials.access_token
-    print access_token
+    access_token = credentials['access_token']
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % access_token
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-
     if result['status'] == '200':
         # Reset the user's session
         del login_session['credentials']
@@ -188,7 +184,6 @@ def fbconnect():
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    print request.data
     access_token = request.data
     print "access token received = %s " % access_token
 
@@ -261,7 +256,6 @@ def fbdisconnect():
     del login_session['user_id']
     del login_session['facebook_id']
     return "You have been logged out"
-###
 
 def createUser(login_session):
     newUser = User(name = login_session['username'], email = login_session['email'], picture = login_session['picture'])
@@ -305,7 +299,6 @@ def organizersJSON():
 @app.route('/')
 @app.route('/organizer/')
 def showOrganizers():
-    print 'showOrganizers'
     organizers = session.query(Organizer).order_by(asc(Organizer.name))
     if 'username' not in login_session:
         return render_template('publicOrganizers.html', organizers = organizers)
@@ -315,9 +308,8 @@ def showOrganizers():
 
 # Create a new organizer
 @app.route('/organizer/new/', methods=['GET','POST'])
-def newOrganizer():
-    if 'username' not in login_session:
-        return redirect('/login')
+@login_required
+def newOrganizer():    
     if request.method == 'POST':
         if None or '' in request.form.values():
             flash('Please make sure that you have entered all necessary data for all form fields')
@@ -336,40 +328,40 @@ def newOrganizer():
 
 # Edit an organizer
 @app.route('/organizer/<int:organizer_id>/edit/', methods = ['GET', 'POST'])
+@login_required
 def editOrganizer(organizer_id):
-  editedOrganizer = session.query(Organizer).filter_by(id = organizer_id).one()
-  if request.method == 'POST':
-      if request.form['name'] and request.form['organizer_thumbnail_url']:
-        editedOrganizer.name = request.form['name']
-        editedOrganizer.organizer_thumbnail_url = request.form['organizer_thumbnail_url']
-        flash('Organizer Successfully Edited %s' % editedOrganizer.name)
-        return redirect(url_for('showOrganizers'))
-  else:
-    return render_template('editOrganizer.html', organizer = editedOrganizer)
-
+    editedOrganizer = session.query(Organizer).filter_by(id = organizer_id).one()
+    if request.method == 'POST':
+        if request.form['name'] and request.form['organizer_thumbnail_url']:
+            editedOrganizer.name = request.form['name']
+            editedOrganizer.organizer_thumbnail_url = request.form['organizer_thumbnail_url']
+            flash('Organizer Successfully Edited %s' % editedOrganizer.name)
+            return redirect(url_for('showOrganizers'))
+    else:
+        return render_template('editOrganizer.html', organizer = editedOrganizer)
 
 # Delete an organizer
 @app.route('/organizer/<int:organizer_id>/delete/', methods = ['GET','POST'])
-def deleteOrganizer(organizer_id):
-  organizerToDelete = session.query(Organizer).filter_by(id = organizer_id).one()
-
-  if 'username' not in login_session:
-      return redirect('/login')
-  if organizerToDelete.user_id != login_session['user_id']:
-      return "<script>function myFunction() {alert('You are not \
+@login_required
+def deleteOrganizer(organizer_id):    
+    organizerToDelete = session.query(Organizer).filter_by(id = organizer_id).one()
+    
+    if organizerToDelete.user_id != login_session['user_id']:
+        return "<script>function myFunction() {alert('You are not \
       authorized to delete this organizer. ');}</script> <body onload='myFunction()'>"
-  if request.method == 'POST':
-    session.delete(organizerToDelete)
-    organizerEvents = session.query(Event).filter_by(organizer_id = organizer_id).all()
-    for organizerEvent in organizerEvents:
-        eventToDelete = session.query(Event).filter_by(id = organizerEvent.id).one()
-        session.delete(eventToDelete)
+    
+    if request.method == 'POST':
+        session.delete(organizerToDelete)
+#        organizerEvents = session.query(Event).filter_by(organizer_id = organizer_id).all()
+#        for organizerEvent in organizerEvents:
+#            eventToDelete = session.query(Event).filter_by(id = organizerEvent.id).one()
+#            session.delete(eventToDelete)
 
-    flash('%s Successfully Deleted' % organizerToDelete.name)
-    session.commit()
-    return redirect(url_for('showOrganizers', organizer_id = organizer_id))
-  else:
-    return render_template('deleteOrganizer.html',organizer = organizerToDelete)
+        flash('%s Successfully Deleted' % organizerToDelete.name)
+        session.commit()
+        return redirect(url_for('showOrganizers', organizer_id = organizer_id))
+    else:
+        return render_template('deleteOrganizer.html',organizer = organizerToDelete)
 
 # Show an event
 @app.route('/organizer/<int:organizer_id>/')
@@ -386,18 +378,20 @@ def showEvent(organizer_id):
 
 # Create a new event
 @app.route('/organizer/<int:organizer_id>/event/new/', methods=['GET','POST'])
-def newEvent(organizer_id):
-  organizer = session.query(Organizer).filter_by(id = organizer_id).one()
-  if request.method == 'POST':
-      featured = 0
-      if 'featured' in request.form:
-        featured = request.form['featured']
+@login_required
+def newEvent(organizer_id):    
+    organizer = session.query(Organizer).filter_by(id = organizer_id).one()
+    
+    if request.method == 'POST':
+        featured = 0
+        if 'featured' in request.form:
+            featured = request.form['featured']
         
-      if None or '' in request.form.values():
-        flash('Please make sure that you have entered all necessary data for all form fields')
-        return render_template('newEvent.html')
+        if None or '' in request.form.values():
+            flash('Please make sure that you have entered all necessary data for all form fields')
+            return render_template('newEvent.html')
 
-      newEvent = Event(
+        newEvent = Event(
                     name = request.form['name'],
                     description = request.form['description'],
                     event_url = request.form['event_url'],
@@ -408,16 +402,17 @@ def newEvent(organizer_id):
                     organizer_id = organizer_id,
                     user_id = organizer.user_id
                     )
-      session.add(newEvent)
-      session.commit()
-      flash('New Event %s Successfully Created' % (newEvent.name))
-      return redirect(url_for('showEvent', organizer_id = organizer_id))
-  else:
-      return render_template('newEvent.html', organizer_id = organizer_id)
+        session.add(newEvent)
+        session.commit()
+        flash('New Event %s Successfully Created' % (newEvent.name))
+        return redirect(url_for('showEvent', organizer_id = organizer_id))
+    else:
+        return render_template('newEvent.html', organizer_id = organizer_id)
 
 # Edit an event
 @app.route('/organizer/<int:organizer_id>/event/<int:event_id>/edit', methods=['GET','POST'])
-def editEvent(organizer_id, event_id):
+@login_required
+def editEvent(organizer_id, event_id):    
     editedEvent = session.query(Event).filter_by(id = event_id).one()
     organizer = session.query(Organizer).filter_by(id = organizer_id).one()
     featured = 0
@@ -438,7 +433,6 @@ def editEvent(organizer_id, event_id):
         if request.form['start_date']:
             editedEvent.start_date = datetime.strptime(request.form['start_date'], '%Y-%M-%d')
         editedEvent.featured = featured
-
         session.add(editedEvent)
         session.commit()
         flash('Event Successfully Edited')
@@ -449,7 +443,8 @@ def editEvent(organizer_id, event_id):
 
 # Delete an event
 @app.route('/organizer/<int:organizer_id>/event/<int:event_id>/delete', methods = ['GET','POST'])
-def deleteEvent(organizer_id, event_id):
+@login_required
+def deleteEvent(organizer_id, event_id):    
     organizer = session.query(Organizer).filter_by(id = organizer_id).one()
     eventToDelete = session.query(Event).filter_by(id = event_id).one()
     if request.method == 'POST':
@@ -459,8 +454,8 @@ def deleteEvent(organizer_id, event_id):
         return redirect(url_for('showEvent', organizer_id = organizer_id))
     else:
         return render_template('deleteEvent.html', event = eventToDelete)
-
+    
 if __name__ == '__main__':
-  app.secret_key = 'super_secret_key'
-  app.debug = True
-  app.run(host = '0.0.0.0', port = 5000)
+    app.secret_key = 'super_secret_key'
+    app.debug = True
+    app.run(host = '0.0.0.0', port = 5000)
