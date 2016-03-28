@@ -27,7 +27,7 @@ Vagrant is the software that configures the VM and lets you share files between 
 
 From the terminal, run:
 
-    git clone https://github.com/mohammedsafwat/events-catalog.git
+git clone https://github.com/mohammedsafwat/events-catalog.git
 
 This will give you a directory named **events-catalog** complete with the source code for the flask application and a vagrantfile.
 
@@ -48,4 +48,4 @@ Now type **python database_setup.py** to initialize the database.
 
 Type **python lotsofevents.py** to populate the database with events and events organizers. (Optional)
 
-Type **python project.py** to run the Flask web server. In your browser visit **http://localhost:5000** to view the restaurant menu app.  You should be able to view, add, edit, and delete menu items and restaurants.
+Type **python project.py** to run the Flask web server. In your browser visit **http://localhost:5000** to view the restaurant menu app.  You should be able to view, add, edit, and delete menu items and restaurants. Changing 5000 will change the port number that you want the Flask web server to run on and receive incoming requests. 
